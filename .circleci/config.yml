@@ -64,43 +64,6 @@ jobs:
           command: bash ./gradlew --no-daemon --no-configuration-cache clean check
 
       - run:
-          name: Prepare JUnit test results
-          command: |
-            mkdir -p test-results/unit test-results/integration
-            cp -v build/test-results/test/TEST-*.xml test-results/unit/ || true
-            cp -v build/test-results/integrationTest/TEST-*.xml test-results/integration/ || true
-
-      - store_test_results:
-          path: test-results
-
-      - store_artifacts:
-          path: build/reports/jacoco/jacoco.xml
-
-      - run:
-          name: Verify JaCoCo XML exists
-          command: |
-            ls -lah build/reports/jacoco || true
-            test -f build/reports/jacoco/jacoco.xml
-
-      - run:
-          name: Upload coverage to Codecov (force GitHub repo slug)
-          command: |
-            REPO_URL="$(git remote get-url origin)"
-            echo "origin=$REPO_URL"
-            
-            SLUG="$(echo "$REPO_URL" | sed -E 's#(https://github.com/|git@github.com:)([^/]+)/([^/.]+)(\.git)?#\2/\3#')"
-            echo "slug=$SLUG"
-            
-            curl -Os https://cli.codecov.io/latest/linux/codecov
-            chmod +x codecov
-            ./codecov --version
-            
-            ./codecov --verbose upload-process \
-              -t "$CODECOV_TOKEN" \
-              -r "$SLUG" \
-              -f "build/reports/jacoco/jacoco.xml"
-
-      - run:
           name: Upload JUnit test results to CodeCov (Test Analytics)
           when: always
           command: |
@@ -142,6 +105,43 @@ jobs:
                 --file "$f" \
                 --flag integration
             done
+
+      - run:
+          name: Prepare JUnit test results
+          command: |
+            mkdir -p test-results/unit test-results/integration
+            cp -v build/test-results/test/TEST-*.xml test-results/unit/ || true
+            cp -v build/test-results/integrationTest/TEST-*.xml test-results/integration/ || true
+
+      - store_test_results:
+          path: test-results
+
+      - store_artifacts:
+          path: build/reports/jacoco/jacoco.xml
+
+      - run:
+          name: Verify JaCoCo XML exists
+          command: |
+            ls -lah build/reports/jacoco || true
+            test -f build/reports/jacoco/jacoco.xml
+
+      - run:
+          name: Upload coverage to Codecov (force GitHub repo slug)
+          command: |
+            REPO_URL="$(git remote get-url origin)"
+            echo "origin=$REPO_URL"
+            
+            SLUG="$(echo "$REPO_URL" | sed -E 's#(https://github.com/|git@github.com:)([^/]+)/([^/.]+)(\.git)?#\2/\3#')"
+            echo "slug=$SLUG"
+            
+            curl -Os https://cli.codecov.io/latest/linux/codecov
+            chmod +x codecov
+            ./codecov --version
+            
+            ./codecov --verbose upload-process \
+              -t "$CODECOV_TOKEN" \
+              -r "$SLUG" \
+              -f "build/reports/jacoco/jacoco.xml"
 
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/guides/orchestrate/workflows/ & https://circleci.com/docs/reference/configuration-reference/#workflows
