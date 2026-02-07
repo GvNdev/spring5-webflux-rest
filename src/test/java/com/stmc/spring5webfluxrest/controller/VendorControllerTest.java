@@ -6,11 +6,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.BDDMockito;
 import org.mockito.Mockito;
+import org.reactivestreams.Publisher;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 
 class VendorControllerTest {
     WebTestClient webTestClient;
@@ -46,5 +48,19 @@ class VendorControllerTest {
         webTestClient.get().uri("/api/v1/vendors/someid")
                 .exchange()
                 .expectBodyList(Vendor.class);
+    }
+
+    @Test
+    void save() {
+        BDDMockito.given(vendorRepository.saveAll(any(Publisher.class)))
+                .willReturn(Flux.just(Vendor.builder().fistName("somefirst").lastName("somelast").build()));
+
+        Mono<Vendor> savedVendorMono = Mono.just(Vendor.builder().fistName("Some First").lastName("Some Last").build());
+
+        webTestClient.post().uri("/api/v1/vendors")
+                .body(savedVendorMono, Vendor.class)
+                .exchange()
+                .expectStatus()
+                .isCreated();
     }
 }
