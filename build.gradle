@@ -28,7 +28,6 @@ dependencyManagement {
 }
 
 configurations {
-    jacocoCli
     compileOnly {
         extendsFrom annotationProcessor
     }
@@ -52,9 +51,6 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok:1.18.42'
     testCompileOnly 'org.projectlombok:lombok:1.18.42'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.42'
-
-    // JaCoCo
-    jacocoCli 'org.jacoco:org.jacoco.cli:0.8.14:nodeps'
 
     // JUnit
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -100,40 +96,16 @@ tasks.register('integrationTest', Test) {
 }
 
 /** Merge UT + IT (equivalente a goal merge) */
-tasks.register('jacocoMerge') {
+tasks.register('jacocoMergedReport', JacocoReport) {
     dependsOn tasks.named('test'), tasks.named('integrationTest')
 
-    // Jar de JaCoCo cli (resuelto por configuración)
-    def cliJarProvider = configurations.jacocoCli.elements.map { it.single().asFile }
+    executionData(
+            file("$buildDir/jacoco/jacoco-ut.exec"),
+            file("$buildDir/jacoco/jacoco-it.exec")
+    )
 
-    // Ejecuta: java -jar <cli> merge <ut> <it> --destfile <dest>
-    doLast {
-        def utExec = file("$buildDir/jacoco/jacoco-ut.exec")
-        def itExec = file("$buildDir/jacoco/jacoco-it.exec")
-
-        def execFiles = [utExec, itExec].findAll { f -> f.exists() }
-        if (execFiles.isEmpty()) {
-            logger.lifecycle("No JaCoCo exec files found to merge.")
-            return
-        }
-
-        def dest = file("$buildDir/jacoco/jacoco.exec")
-
-        javaexec {
-            classpath = configurations.jacocoCli
-            mainClass = 'org.jacoco.cli.internal.Main'
-            args = (['merge'] + execFiles.collect { f -> f.absolutePath } + ['--destfile', dest.absolutePath])
-        }
-    }
-}
-
-/** Report único (XML para Codecov) */
-tasks.register('jacocoMergedReport', JacocoReport) {
-    dependsOn tasks.named('jacocoMerge')
-
-    executionData file("$buildDir/jacoco/jacoco.exec")
-    classDirectories.from files(sourceSets.main.output)
-    sourceDirectories.from files(sourceSets.main.allSource.srcDirs)
+    classDirectories.from(files(sourceSets.main.output))
+    sourceDirectories.from(files(sourceSets.main.allSource.srcDirs))
 
     reports {
         xml.required = true

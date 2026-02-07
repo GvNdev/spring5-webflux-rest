@@ -77,6 +77,12 @@ jobs:
           path: build/reports/jacoco/jacoco.xml
 
       - run:
+          name: Verify JaCoCo XML exists
+          command: |
+            ls -lah build/reports/jacoco || true
+            test -f build/reports/jacoco/jacoco.xml
+
+      - run:
           name: Upload coverage to Codecov (force GitHub repo slug)
           command: |
             REPO_URL="$(git remote get-url origin)"
