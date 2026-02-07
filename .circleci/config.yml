@@ -58,6 +58,13 @@ jobs:
             done
             echo "Mongo did not start in time" && exit 1
 
+      - run:
+          name: Install CodeCov CLI
+          command: |
+            curl -Os https://cli.codecov.io/latest/linux/codecov
+            chmod +x codecov
+            ./codecov --version
+
       # Run tests + coverage (UT + IT) and generate merged JaCoCo XML
       - run:
           name: Test + Coverage (UT + IT)
@@ -68,15 +75,8 @@ jobs:
           when: always
           command: |
             # Repo slug
-            REPO_URL="$(git remote get-url origin)"
-            echo "origin=$REPO_URL"
-            SLUG="$(echo "$REPO_URL" | sed -E 's#(https://github.com/|git@github.com:)([^/]+)/([^/.]+)(\.git)?#\2/\3#')"
+            SLUG="$(echo "$(git remote get-url origin)" | sed -E 's#(https://github.com/|git@github.com:)([^/]+)/([^/.]+)(\.git)?#\2/\3#')"
             echo "slug=$SLUG"
-            
-            # Descargar CodeCov CLI (binario)
-            curl -Os https://cli.codecov.io/latest/linux/codecov
-            chmod +x codecov
-            ./codecov --version
             
             # Verifica que existan XML
             ls -lah build/test-results/test || true
@@ -127,16 +127,10 @@ jobs:
 
       - run:
           name: Upload coverage to Codecov (force GitHub repo slug)
+          when: always
           command: |
-            REPO_URL="$(git remote get-url origin)"
-            echo "origin=$REPO_URL"
-            
-            SLUG="$(echo "$REPO_URL" | sed -E 's#(https://github.com/|git@github.com:)([^/]+)/([^/.]+)(\.git)?#\2/\3#')"
+            SLUG="$(echo "$(git remote get-url origin)" | sed -E 's#(https://github.com/|git@github.com:)([^/]+)/([^/.]+)(\.git)?#\2/\3#')"
             echo "slug=$SLUG"
-            
-            curl -Os https://cli.codecov.io/latest/linux/codecov
-            chmod +x codecov
-            ./codecov --version
             
             ./codecov --verbose upload-process \
               -t "$CODECOV_TOKEN" \
