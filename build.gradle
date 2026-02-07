@@ -53,6 +53,9 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok:1.18.42'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.42'
 
+    // JaCoCo
+    jacocoCli 'org.jacoco:org.jacoco.cli:0.8.14:nodeps'
+
     // JUnit
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
