@@ -100,6 +100,49 @@ jobs:
               -r "$SLUG" \
               -f "build/reports/jacoco/jacoco.xml"
 
+      - run:
+          name: Upload JUnit test results to CodeCov (Test Analytics)
+          when: always
+          command: |
+            # Repo slug
+            REPO_URL="$(git remote get-url origin)"
+            echo "origin=$REPO_URL"
+            SLUG="$(echo "$REPO_URL" | sed -E 's#(https://github.com/|git@github.com:)([^/]+)/([^/.]+)(\.git)?#\2/\3#')"
+            echo "slug=$SLUG"
+            
+            # Descargar CodeCov CLI (binario)
+            curl -Os https://cli.codecov.io/latest/linux/codecov
+            chmod +x codecov
+            ./codecov --version
+            
+            # Verifica que existan XML
+            ls -lah build/test-results/test || true
+            ls -lah build/test-results/integrationTest || true
+            
+            # Upload Unit tests (flag: unit)
+            for f in build/test-results/test/TEST-*.xml; do
+              [ -f "$f" ] || continue
+              echo "Uploading unit test result: $f"
+              ./codecov --verbose do-upload \
+                -t "$CODECOV_TOKEN" \
+                -r "$SLUG" \
+                --report-type test_results \
+                --file "$f" \
+                --flag unit
+            done
+
+            # Upload Integration tests (flag: integration)
+            for f in build/test-results/integrationTest/TEST-*.xml; do
+              [ -f "$f" ] || continue
+              echo "Uploading integration test result: $f"
+              ./codecov --verbose do-upload \
+                -t "$CODECOV_TOKEN" \
+                -r "$SLUG" \
+                --report-type test_results \
+                --file "$f" \
+                --flag integration
+            done
+
 # Orchestrate jobs using workflows
 # See: https://circleci.com/docs/guides/orchestrate/workflows/ & https://circleci.com/docs/reference/configuration-reference/#workflows
 workflows:
